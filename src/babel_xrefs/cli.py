@@ -3,6 +3,7 @@ import click
 import logging
 from babel_xrefs.core.downloader import BabelDownloader
 from babel_xrefs.babel_xrefs import BabelXRefs
+from babel_xrefs.core.nodenorm import NodeNorm
 
 
 @click.group()
@@ -61,6 +62,23 @@ def ids(curies: list[str], babel_url: str, local_dir: str):
     xrefs = bxref.get_curie_ids(curies)
     for xref in xrefs:
         print(xref)
+
+@cli.command("test-concord")
+@click.argument("curies", type=str, required=True, nargs=-1)
+@click.option("--nodenorm-url", type=str, default="https://nodenormalization-sri.renci.org/", help="NodeNorm URL to check for concord changes")
+def test_concord(curies, nodenorm_url):
+    # We're trying to answer a simple question here: if the CURIEs we mention were combined, how would the cliques change in NodeNorm?
+    # By definition, this can only combine all the cliques mentioned in the CURIEs.
+
+    nodenorm = NodeNorm(nodenorm_url)
+    for curie in curies:
+        identifiers = nodenorm.get_clique_identifiers(curie)
+        for identifier in identifiers:
+            if identifier.label:
+                print(f"{curie}\t{identifier.curie}\t{identifier.label}")
+            else:
+                print(f"{curie}\t{identifier.curie}\t")
+
 
 if __name__ == "__main__":
     cli()
