@@ -14,8 +14,10 @@ def cli():
 @click.argument("curies", type=str, required=True, nargs=-1)
 @click.option("--local-dir", type=str, default="data/2025nov19", help="Local location to save Babel download files to")
 @click.option("--babel-url", type=str, default="https://stars.renci.org:443/var/babel_outputs/2025nov19/", help="Base URL of the Babel server")
+@click.option("--nodenorm-url", type=str, default="https://nodenormalization-sri.renci.org/", help="NodeNorm URL to check for concord changes")
 @click.option("--expand", is_flag=True, help="Also display xrefs for returned CURIEs")
-def xrefs(curies: list[str], babel_url: str, local_dir: str, expand: bool):
+@click.option("--labels", is_flag=True, help="Include labels for CURIEs")
+def xrefs(curies: list[str], babel_url: str, nodenorm_url, local_dir: str, expand: bool, labels: bool):
     """
     Fetches and prints the cross-references (xrefs) for the given CURIEs.
 
@@ -33,8 +35,8 @@ def xrefs(curies: list[str], babel_url: str, local_dir: str, expand: bool):
     """
     logging.basicConfig(level=logging.INFO)
 
-    bxref = BabelXRefs(BabelDownloader(babel_url, local_path=local_dir))
-    xrefs = bxref.get_curie_xrefs(curies, expand)
+    bxref = BabelXRefs(BabelDownloader(babel_url, local_path=local_dir), NodeNorm(nodenorm_url))
+    xrefs = bxref.get_curie_xrefs(curies, expand, label_curies=labels)
     for xref in xrefs:
         print(xref)
 
@@ -75,9 +77,9 @@ def test_concord(curies, nodenorm_url):
         identifiers = nodenorm.get_clique_identifiers(curie)
         for identifier in identifiers:
             if identifier.label:
-                print(f"{curie}\t{identifier.curie}\t{identifier.label}")
+                print(f"{curie}\t{identifier.curie}\t{identifier.label}\t{identifier.biolink_type}")
             else:
-                print(f"{curie}\t{identifier.curie}\t")
+                print(f"{curie}\t{identifier.curie}\t\t{identifier.biolink_type}")
 
 
 if __name__ == "__main__":

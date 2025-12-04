@@ -7,6 +7,8 @@ import duckdb
 import functools
 
 from babel_xrefs.core.downloader import BabelDownloader
+from babel_xrefs.core.nodenorm import NodeNorm
+
 
 @dataclasses.dataclass(frozen=True)
 class CrossReference:
@@ -26,9 +28,26 @@ class CrossReference:
     def __lt__(self, other):
         return (self.filename, self.subj, self.obj, self.pred) < (other.filename, other.subj, other.obj, other.pred)
 
+class LabeledCrossReference(CrossReference):
+    subj_label: str
+    subj_biolink_type: str
+    obj_label: str
+    obj_biolink_type: str
+
+    def __init__(self, subj: str, pred: str, obj: str, filename: str, subj_label: str, subj_biolink_type: str, obj_label: str, obj_biolink_type: str):
+        super().__init__(subj=subj, obj=obj, filename=filename, pred=pred)
+        self.subj_label = subj_label
+        self.subj_biolink_type = subj_biolink_type
+        self.obj_label = obj_label
+        self.obj_biolink_type = obj_biolink_type
+
+    def __str__(self):
+        return f"""LabeledCrossReference(subj="{self.subj}", obj="{self.obj}", subj_label="{self.subj_label}", obj_label="{self.obj_label}", subj_label="{self.subj_label}", obj_label="{self.obj_label}")"""
+
 class BabelXRefs:
-    def __init__(self, downloader: BabelDownloader):
+    def __init__(self, downloader: BabelDownloader, nodenorm: NodeNorm = None):
         self.downloader = downloader
+        self.nodenorm = nodenorm
 
     def get_curie_ids(self, curies: list[str]):
         """
@@ -52,7 +71,7 @@ class BabelXRefs:
         return xrefs.fetchall()
 
     @functools.lru_cache(maxsize=None)
-    def get_curie_xref(self, curie: str):
+    def get_curie_xref(self, curie: str, label_curies: bool = False):
         concord_parquet = self.downloader.get_downloaded_file('duckdb/Concord.parquet')
         concord_metadata_parquet = self.downloader.get_downloaded_file('duckdb/Metadata.parquet')
 
@@ -61,9 +80,22 @@ class BabelXRefs:
         concord_table = db.read_parquet(concord_parquet)
         xref_tuples = db.execute(f"SELECT filename, subj, pred, obj FROM concord_table WHERE subj=$1 OR obj=$1", [curie]).fetchall()
         xrefs = list(map(lambda rec: CrossReference.from_tuple(rec), xref_tuples))
+
+        if label_curies:
+            xrefs = map(lambda xref: LabeledCrossReference(
+                subj=xref.subj,
+                obj=xref.obj,
+                filename=xref.filename,
+                pred=xref.pred,
+                subj_label=self.nodenorm.get_identifier(xref.subj).label,
+                subj_biolink_type=self.nodenorm.get_identifier(xref.subj).biolink_type,
+                obj_label=self.nodenorm.get_identifier(xref.obj).label,
+                obj_biolink_type=self.nodenorm.get_identifier(xref.obj).biolink_type,
+            ), xrefs)
+
         return xrefs
 
-    def get_curie_xrefs(self, curies: list[str], expand: bool = False, ignore_curies_in_expansion: set = set()):
+    def get_curie_xrefs(self, curies: list[str], expand: bool = False, ignore_curies_in_expansion: set = set(), label_curies: bool = False):
         """
         Search for all identifiers that are cross-referenced to the given CURIE.
 
@@ -75,13 +107,13 @@ class BabelXRefs:
         xrefs = set()
         for curie in curies:
             logging.info(f"Searching for cross-references for {curie}")
-            xrefs.update(self.get_curie_xref(curie))
+            xrefs.update(self.get_curie_xref(curie, label_curies))
 
         if expand:
             # Get a unique set of referenced curies, not including the ones currently queried.
             new_curies = list(set([curie for xref in xrefs for curie in xref.curies]) - set(curies) - ignore_curies_in_expansion)
             if new_curies:
                 logging.info(f"Expanding cross-references to {new_curies}")
-                xrefs.update(self.get_curie_xrefs(new_curies, expand=True, ignore_curies_in_expansion=ignore_curies_in_expansion | set(new_curies)))
+                xrefs.update(self.get_curie_xrefs(new_curies, expand=True, ignore_curies_in_expansion=ignore_curies_in_expansion | set(new_curies), label_curies=label_curies))
 
         return sorted(xrefs)

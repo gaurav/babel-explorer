@@ -1,11 +1,13 @@
 import dataclasses
 import functools
 import requests
+import logging
 
 @dataclasses.dataclass
 class Identifier:
     curie: str
     label: str = ""
+    biolink_type: str = ""
     taxa: list[str] = dataclasses.field(default_factory=list)
     description: list[str] = dataclasses.field(default_factory=list)
 
@@ -21,6 +23,8 @@ class Identifier:
             identifier.taxa = d['taxa']
         if 'description' in d:
             identifier.description = d['description']
+        if 'type' in d:
+            identifier.biolink_type = d['type']
         return identifier
 
 class NodeNorm:
@@ -28,7 +32,18 @@ class NodeNorm:
         self.nodenorm_url = nodenorm_url
 
     @functools.lru_cache(maxsize=None)
-    def normalize_curie(self, curie: str, conflate=True, drug_chemical_conflate=False, description=False, individual_types=None, include_taxa=None):
+    def get_identifier(self, curie):
+        result = self.normalize_curie(curie)
+        logging.debug(f"Normalizing {curie} with NodeNorm to result: {result}")
+        for identifier in result.get('equivalent_identifiers', []):
+            if identifier['identifier'] == curie:
+                logging.debug(f"Found exact match for {curie}: {identifier}")
+                return Identifier.from_dict(identifier)
+
+        return Identifier(curie=curie)
+
+    @functools.lru_cache(maxsize=None)
+    def normalize_curie(self, curie: str, conflate=True, drug_chemical_conflate=True, description=True, individual_types=True, include_taxa=True):
         response = requests.get(f"{self.nodenorm_url}get_normalized_nodes", params={
             "curie": curie,
             "conflate": conflate,
