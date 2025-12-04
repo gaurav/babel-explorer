@@ -13,7 +13,8 @@ def cli():
 @click.argument("curies", type=str, required=True, nargs=-1)
 @click.option("--local-dir", type=str, default="data/2025nov19", help="Local location to save Babel download files to")
 @click.option("--babel-url", type=str, default="https://stars.renci.org:443/var/babel_outputs/2025nov19/", help="Base URL of the Babel server")
-def xrefs(curies: list[str], babel_url: str, local_dir: str):
+@click.option("--expand", is_flag=True, help="Also display xrefs for returned CURIEs")
+def xrefs(curies: list[str], babel_url: str, local_dir: str, expand: bool):
     """
     Fetches and prints the cross-references (xrefs) for the given CURIEs.
 
@@ -32,7 +33,7 @@ def xrefs(curies: list[str], babel_url: str, local_dir: str):
     logging.basicConfig(level=logging.INFO)
 
     bxref = BabelXRefs(BabelDownloader(babel_url, local_path=local_dir))
-    xrefs = bxref.get_curie_xrefs(curies)
+    xrefs = bxref.get_curie_xrefs(curies, expand)
     for xref in xrefs:
         print(xref)
 

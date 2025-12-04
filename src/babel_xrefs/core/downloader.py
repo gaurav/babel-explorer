@@ -1,8 +1,10 @@
+import functools
 import os
 import urllib.parse
 import subprocess
 import requests
 import logging
+import functools
 
 class BabelDownloader:
     """
@@ -31,11 +33,13 @@ class BabelDownloader:
         else:
             raise ValueError(f"Invalid local_path (must be an existing directory): '{local_path}'")
 
+    @functools.lru_cache(maxsize=None)
     def get_output_file(self, filename):
         filepath = os.path.join(self.local_path, filename)
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         return filepath
 
+    @functools.lru_cache(maxsize=None)
     def get_downloaded_file(self, dirpath: str, chunk_size:int=1024*1024):
         local_path_to_download_to = os.path.join(self.local_path, dirpath)
         os.makedirs(os.path.dirname(local_path_to_download_to), exist_ok=True)
@@ -65,7 +69,7 @@ class BabelDownloader:
         self.logger.info(f"Downloaded {url_to_download} to {local_path_to_download_to}: {bytes_downloaded} bytes")
         return local_path_to_download_to
 
-
+    @functools.lru_cache(maxsize=None)
     def get_downloaded_dir(self, dirpath: str):
         local_path_to_download_to = os.path.join(self.local_path, dirpath)
         os.makedirs(os.path.dirname(local_path_to_download_to), exist_ok=True)
