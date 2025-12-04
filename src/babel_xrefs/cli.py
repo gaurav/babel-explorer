@@ -1,10 +1,13 @@
 # Command line interface for babel-xrefs
 import click
 import logging
+import dotenv
 from babel_xrefs.core.downloader import BabelDownloader
 from babel_xrefs.babel_xrefs import BabelXRefs
 from babel_xrefs.core.nodenorm import NodeNorm
+from babel_xrefs.trackers.github_issues import GitHubIssuesTracker
 
+logging.basicConfig(level=logging.INFO)
 
 @click.group()
 def cli():
@@ -80,6 +83,16 @@ def test_concord(curies, nodenorm_url):
                 print(f"{curie}\t{identifier.curie}\t{identifier.label}\t{identifier.biolink_type}")
             else:
                 print(f"{curie}\t{identifier.curie}\t\t{identifier.biolink_type}")
+
+
+@cli.command("issues")
+@click.option("--nodenorm-url", type=str, default="https://nodenormalization-sri.renci.org/", help="NodeNorm URL to check for concord changes")
+def issues(nodenorm_url):
+    dotenv.load_dotenv()
+    nodenorm = NodeNorm(nodenorm_url)
+
+    github_issue_tracker = GitHubIssuesTracker(nodenorm)
+    issues = github_issue_tracker.execute_issue_tests()
 
 
 if __name__ == "__main__":
