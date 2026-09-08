@@ -24,6 +24,7 @@ cp env.default .env
 | `BABEL_CHECK_DOWNLOAD` | `3h` | How often to re-check downloads |
 | `NODENORM_URL` | `https://nodenormalization-sri.renci.org/` | NodeNorm instance for labels and cliques |
 | `NAMERES_URL` | `https://name-resolution-sri.renci.org/` | Name Resolver instance for viewer autocomplete |
+| `BABEL_ALLOW_VERSION_MISMATCH` | `false` | Proceed when NodeNorm reports a different Babel release than the one being queried |
 
 Each has a matching command-line option, and precedence runs **flag > environment variable >
 `.env` > default**. The release actually queried — the *effective Babel URL* — is

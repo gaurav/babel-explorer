@@ -62,7 +62,7 @@ def pytest_sessionfinish(session, exitstatus):
     editing — silently destroys the multi-gigabyte download of an integration run going
     on in another terminal. The unit suite never creates or reads that directory, so it
     has no business removing it. Two concurrent *integration* runs still clash; that one
-    is unavoidable while the path is shared, and is documented in CLAUDE.md.
+    is unavoidable while the path is shared, and is documented in AGENTS.md.
     """
     if hasattr(session.config, "workerinput"):
         return

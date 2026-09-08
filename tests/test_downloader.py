@@ -1284,7 +1284,7 @@ def test_download_identifiers_parquet(downloaded_identifiers):
     """Verify Identifiers.parquet downloads as a complete Parquet file.
 
     Checks the format rather than a byte count. A hard size figure is exactly the kind
-    of number CLAUDE.md says drifts silently and then misleads — it was ``> 2 GB``,
+    of number AGENTS.md says drifts silently and then misleads — it was ``> 2 GB``,
     chosen against a release long superseded — and the ``PAR1`` marker at both ends is
     a better test of the thing that actually goes wrong: a truncated download, or an
     error page saved under a .parquet name.

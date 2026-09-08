@@ -300,7 +300,7 @@ class TestWriteRecords:
 
 
 class TestLabelConvention:
-    """CLAUDE.md: a label follows its CURIE in double quotes, or is omitted."""
+    """AGENTS.md: a label follows its CURIE in double quotes, or is omitted."""
 
     def test_label_follows_curie_in_double_quotes(self):
         assert curie_with_label("MONDO:1", None, "asthma") == 'MONDO:1 "asthma"'

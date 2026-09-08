@@ -709,7 +709,7 @@ class TestUrlConfiguration:
 class TestCommittedConfigTemplate:
     """env.default is the only config file that ships, so it is the one that can leak.
 
-    CLAUDE.md and README.md both say the Translator-specific URL must never be committed.
+    AGENTS.md and README.md both say the Translator-specific URL must never be committed.
     Until now nothing enforced it, and the URL did in fact sit in this repository's git
     history from the initial commit until it was rewritten out on 2026-09-01. A rule with
     no test is a rule that comes back.
