@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Babel Explorer</title>
+    <link rel="stylesheet" href="/assets/styles.css">
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="masthead">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">BX</span>
+          <div>
+            <p class="eyebrow">Translator identifier provenance</p>
+            <h1>Babel Explorer</h1>
+          </div>
+        </div>
+
+        <form id="search-form" class="search-form" autocomplete="off">
+          <label for="query">Identifier or concept name</label>
+          <div class="search-row">
+            <input
+              id="query"
+              name="query"
+              type="text"
+              placeholder="MONDO:0004979 or asthma"
+              spellcheck="false"
+              aria-autocomplete="list"
+              aria-controls="suggestions"
+              aria-expanded="false"
+            >
+            <button id="search-button" type="submit">Explore</button>
+          </div>
+          <div id="suggestions" class="suggestions" role="listbox" hidden></div>
+        </form>
+      </header>
+
+      <main class="workspace">
+        <section class="graph-panel" aria-label="Cross-reference graph">
+          <div class="graph-toolbar">
+            <div id="graph-title" class="graph-title">No identifier selected</div>
+            <div class="toolbar-actions">
+              <button id="toggle-recursion" class="quiet-button" type="button" disabled>
+                Show full concordance
+              </button>
+              <button id="toggle-labels" class="quiet-button" type="button" disabled>
+                Labels
+              </button>
+              <button id="fit-graph" class="quiet-button" type="button" disabled>
+                Fit graph
+              </button>
+            </div>
+          </div>
+
+          <div id="graph-stage" class="graph-stage">
+            <svg id="graph" role="img" aria-label="Babel cross-reference graph">
+              <g id="viewport">
+                <g id="edge-layer"></g>
+                <g id="node-layer"></g>
+              </g>
+            </svg>
+
+            <div id="empty-state" class="empty-state">
+              <p class="empty-kicker">Trace an identity claim</p>
+              <h2>See how Babel connects identifiers.</h2>
+              <p>
+                Enter a CURIE directly, or search a concept name and choose a
+                normalized result. Start with its NodeNorm clique, then expand into
+                the complete Babel concordance component.
+              </p>
+              <button id="example-button" class="example-button" type="button">
+                Explore asthma
+              </button>
+            </div>
+
+            <div id="loading" class="loading" hidden>
+              <span class="loading-spinner" aria-hidden="true"></span>
+              <div>
+                <strong id="loading-title">Loading the NodeNorm clique</strong>
+                <p id="loading-detail">Finding the clique and its internal Babel mappings.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="inspector">
+          <section class="inspector-section">
+            <p class="section-label">Graph</p>
+            <div id="stats" class="stats">
+              <div><strong>-</strong><span>nodes</span></div>
+              <div><strong>-</strong><span>edges</span></div>
+              <div><strong>-</strong><span>sources</span></div>
+            </div>
+            <p id="release" class="release">Babel release unavailable</p>
+          </section>
+
+          <section class="inspector-section">
+            <p class="section-label">Node cliques</p>
+            <div id="clique-legend" class="clique-legend">
+              <p class="muted">Cliques appear after a graph is loaded.</p>
+            </div>
+            <div class="edge-style-legend" aria-label="Edge style meanings">
+              <div class="edge-style-key">
+                <span class="edge-style-sample"></span>
+                <span>Same clique, or an endpoint is unresolved</span>
+              </div>
+              <div class="edge-style-key">
+                <span class="edge-style-sample cross-clique"></span>
+                <span>Different known NodeNorm cliques</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="inspector-section">
+            <div class="section-heading">
+              <p class="section-label">Edge provenance</p>
+              <button id="show-all-sources" class="text-button" type="button" hidden>
+                Show all
+              </button>
+            </div>
+            <div id="source-legend" class="source-legend">
+              <p class="muted">Sources appear after a graph is loaded.</p>
+            </div>
+          </section>
+
+          <section class="inspector-section detail-section">
+            <p class="section-label">Selection</p>
+            <div id="selection-detail" class="selection-detail">
+              <p class="muted">Select a node or edge to inspect it.</p>
+            </div>
+          </section>
+
+          <section class="inspector-section help-section">
+            <p class="section-label">Controls</p>
+            <p>Scroll to zoom. Drag the background to pan. Source counts are edge records, not identifiers. Select a provenance entry to toggle its edges.</p>
+          </section>
+        </aside>
+      </main>
+
+      <footer class="status-bar">
+        <span id="status">Ready</span>
+        <span>NodeNorm cliques over Babel concordance evidence</span>
+      </footer>
+    </div>
+    <script src="/assets/app.js"></script>
+  </body>
+</html>

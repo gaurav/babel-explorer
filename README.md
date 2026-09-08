@@ -23,6 +23,7 @@ cp env.default .env
 | `BABEL_LOCAL_DIR` | `data` | Where downloaded Babel files are cached |
 | `BABEL_CHECK_DOWNLOAD` | `3h` | How often to re-check downloads |
 | `NODENORM_URL` | `https://nodenormalization-sri.renci.org/` | NodeNorm instance for labels and cliques |
+| `NAMERES_URL` | `https://name-resolution-sri.renci.org/` | Name Resolver instance for viewer autocomplete |
 | `BABEL_ALLOW_VERSION_MISMATCH` | `false` | Proceed when NodeNorm reports a different Babel release than the one being queried |
 
 Each has a matching command-line option, and precedence runs **flag > environment variable >
@@ -68,6 +69,9 @@ uv run babel-explorer xrefs MONDO:0004979 --labels
 # Labels appear in double quotes immediately after the CURIE:
 #   MONDO:0004979 "asthma"  skos:exactMatch  EFO:0000270 "asthma"
 
+# Open the local clique and cross-reference graph viewer
+uv run babel-explorer viewer
+
 # Get ID records for CURIEs
 uv run babel-explorer ids MONDO:0004979
 
@@ -77,6 +81,14 @@ uv run babel-explorer ids MONDO:0004979 --labels
 # Test concordance changes with NodeNorm
 uv run babel-explorer test-concord MONDO:0004979 HP:0000001
 ```
+
+The viewer accepts a CURIE directly or searches Name Resolver for a concept name. It initially
+shows only identifiers in the selected identifier's NodeNorm clique and the Babel concordance
+edges between them. **Show full concordance** lazily runs the recursive query, adds every reachable
+identifier, and colors the added nodes by their NodeNorm clique. Edge colors and filters continue
+to identify the Babel concordance source, while the inspector preserves the full source path and
+predicate for each selected edge. Use `--no-open-browser` to serve without opening a browser, or
+set `--host` and `--port` to change the listener.
 
 ## Testing
 

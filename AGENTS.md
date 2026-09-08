@@ -65,8 +65,8 @@ publish `Concord.parquet` without `Identifiers.parquet`.
 - **[NCATSTranslator/NodeNormalization](https://github.com/NCATSTranslator/NodeNormalization)** —
   the service behind `--labels`, `test-concord` and the version check.
 - **[NCATSTranslator/NameResolution](https://github.com/NCATSTranslator/NameResolution)** — name →
-  CURIE lookup, built on NodeNorm. Not used by this tool; listed because it is the third service
-  people expect to find alongside the other two.
+  CURIE lookup, built on NodeNorm. Used only by the `viewer` command, for the search box's
+  autocomplete: nothing else in this tool starts from a name rather than a CURIE.
 
 Release naming, `latest`, and `VERSION.txt` are conventions this tool relies on but that are not
 documented in any of those repositories — see [Babel versions](#babel-versions) for what it
@@ -92,10 +92,10 @@ uv run babel-explorer --help
 
 ## Configuration
 
-`BABEL_RELEASES_URL`, `BABEL_VERSION`, `BABEL_LOCAL_DIR`, `BABEL_CHECK_DOWNLOAD`, `NODENORM_URL`, and
-`BABEL_ALLOW_VERSION_MISMATCH` are read from `.env` (via `python-dotenv`, loaded in the `cli()`
-group) or the environment. Each is also a command-line option, and precedence runs
-**flag > environment variable > `.env` > built-in default**.
+`BABEL_RELEASES_URL`, `BABEL_VERSION`, `BABEL_LOCAL_DIR`, `BABEL_CHECK_DOWNLOAD`, `NODENORM_URL`,
+`NAMERES_URL` and `BABEL_ALLOW_VERSION_MISMATCH` are read from `.env` (via `python-dotenv`,
+loaded in the `cli()` group) or the environment. Each is also a command-line option, and
+precedence runs **flag > environment variable > `.env` > built-in default**.
 
 The release actually queried — the **effective Babel URL** — is
 `BABEL_RELEASES_URL.rstrip("/") + "/" + BABEL_VERSION + "/"`, composed by `resolve_babel_url()`
@@ -252,9 +252,28 @@ before rejecting the run.
    - `get_babel_version()` reads the `status` endpoint to report which Babel release it was built from
    - Optional component for label enrichment
 
-4. **CLI** (`src/babel_explorer/cli.py`):
+4. **NameResolver** (`src/babel_explorer/core/nameres.py`):
+   - Thin client for Name Resolution's `lookup` endpoint, used only by `viewer`
+   - Configured by `NAMERES_URL` / `--nameres-url`
+
+5. **ViewerService** (`src/babel_explorer/viewer.py`):
+   - Local graph viewer served by the `viewer` command, on the standard library's
+     `ThreadingHTTPServer`. It adds **no dependency**: the browser code
+     (`src/babel_explorer/web/{index.html,app.js,styles.css}`) is hand-written, loads nothing
+     from a CDN, and is read back through `importlib.resources`, not an installed static-file
+     server. Keep it that way — this is a diagnostic tool, not a web application
+   - **Clique first, concordance on request.** The initial graph is the query CURIE's NodeNorm
+     clique plus only the Concord edges whose *both* endpoints are in it; the recursive Babel
+     expansion runs lazily when the user asks for it. That ordering is the clique/concord
+     distinction above made visible — what Babel decided, then the evidence behind it
+   - Graph queries run in a one-worker `ThreadPoolExecutor` and are polled through
+     `/api/graph-status`, because a `--recurse` query outlives any reasonable HTTP timeout.
+     `_graph_lock` then serialises the DuckDB work: concurrent queries over the same
+     multi-gigabyte Parquet only compete for memory and spill
+
+6. **CLI** (`src/babel_explorer/cli.py`):
    - Click-based command-line interface
-   - Three main commands: `xrefs`, `ids`, `test-concord`
+   - Four main commands: `xrefs`, `ids`, `test-concord`, `viewer`
 
 ### Data Flow
 
@@ -366,5 +385,6 @@ since the initial commit. Consequences a future contributor will trip over:
 - Test CURIEs: `tests/data/valid_curies.txt`
 - Downloaded Babel files: `<BABEL_LOCAL_DIR>/duckdb/*.parquet` (default `data/duckdb/`)
 - DuckDB query spill: `<BABEL_LOCAL_DIR>/duckdb-spill/` (default `data/duckdb-spill/`)
+- Viewer browser assets: `src/babel_explorer/web/`
 - Endpoint configuration: `.env` (gitignored), template in `env.default`
 - Entry point: `src/babel_explorer/cli.py`

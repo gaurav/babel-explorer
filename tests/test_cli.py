@@ -149,6 +149,43 @@ class TestCliCommands:
         _, kwargs = mock_dl.call_args
         assert kwargs.get("freshness_seconds") == 3600
 
+    def test_viewer_wires_recursive_graph_service(self):
+        runner = CliRunner()
+        with (
+            patch("babel_explorer.cli.make_downloader") as make_downloader,
+            patch("babel_explorer.cli.NodeNorm") as node_norm,
+            patch("babel_explorer.cli.BabelXRefs") as babel_xrefs,
+            patch("babel_explorer.cli.NameResolver") as name_resolver,
+            patch("babel_explorer.cli.ViewerService") as viewer_service,
+            patch("babel_explorer.cli.serve_viewer") as serve_viewer,
+        ):
+            make_downloader.return_value.babel_version = "2026jul22"
+            node_norm.return_value.get_babel_version.return_value = "2026jul22"
+            result = runner.invoke(
+                cli,
+                [
+                    "viewer",
+                    "--host",
+                    "127.0.0.1",
+                    "--port",
+                    "8123",
+                    "--no-open-browser",
+                ],
+            )
+
+        assert result.exit_code == 0, result.output
+        viewer_service.assert_called_once_with(
+            babel_xrefs.return_value,
+            name_resolver.return_value,
+            "2026jul22",
+        )
+        serve_viewer.assert_called_once_with(
+            viewer_service.return_value,
+            host="127.0.0.1",
+            port=8123,
+            open_browser=False,
+        )
+
     def test_ids_happy_path(self):
         runner = CliRunner()
         mock_id = MagicMock()
@@ -734,11 +771,14 @@ class TestCommittedConfigTemplate:
             assert host in {
                 "stars.renci.org",
                 "nodenormalization-sri.renci.org",
+                "name-resolution-sri.renci.org",
             }, f"{host} is not a public endpoint"
         for path in re.findall(r"https?://\S+", text):
-            assert "/var/babel/" in path or "nodenormalization" in path, (
-                f"{path} is not the public Babel or NodeNorm endpoint"
-            )
+            assert (
+                "/var/babel/" in path
+                or "nodenormalization" in path
+                or "name-resolution" in path
+            ), f"{path} is not the public Babel, NodeNorm, or Name Resolver endpoint"
 
 
 class TestMissingBabelFileReporting:

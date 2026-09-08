@@ -15,13 +15,17 @@ label enrichment from NodeNorm.
   CURIEs, and `--labels` for NodeNorm labels and Biolink types.
 - `ids` — identifier records from `Identifiers.parquet`, with `--labels`.
 - `test-concord` — compare a proposed concordance change against NodeNorm's current cliques.
+- `viewer` — local interactive graph viewer with Name Resolver autocomplete, a clique-first
+  NodeNorm view, lazy recursive Babel expansion, clique-colored added nodes, NodeNorm labels,
+  and source-specific edge colors and filters.
 - `--format json|tsv|csv` on `xrefs` and `ids` for machine-readable output.
 - `BabelDownloader`: streaming downloads with ETag-based freshness checking, resumable retries,
   and a cache that holds one Babel release at a time and refreshes itself when that release
   changes.
 - Configuration from `.env` or the environment — `BABEL_RELEASES_URL`, `BABEL_VERSION`,
-  `BABEL_LOCAL_DIR`, `BABEL_CHECK_DOWNLOAD`, `NODENORM_URL`, `BABEL_ALLOW_VERSION_MISMATCH` —
-  with `env.default` as the committed template. Precedence: flag > environment > `.env` > default.
+  `BABEL_LOCAL_DIR`, `BABEL_CHECK_DOWNLOAD`, `NODENORM_URL`, `NAMERES_URL`,
+  `BABEL_ALLOW_VERSION_MISMATCH` — with `env.default` as the committed template. Precedence:
+  flag > environment > `.env` > default.
 - A version-skew check that refuses to mix labels from one Babel release with cross-references
   from another, overridable with `--allow-version-mismatch`.
 

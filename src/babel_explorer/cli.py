@@ -22,6 +22,7 @@ from babel_explorer.core.downloader import (
     MissingBabelFileError,
     compose_babel_url,
 )
+from babel_explorer.core.nameres import NameResolver
 from babel_explorer.core.nodenorm import NodeNorm
 from babel_explorer.formatting import (
     curie_with_label,
@@ -31,6 +32,7 @@ from babel_explorer.formatting import (
     record_to_dict,
     write_records,
 )
+from babel_explorer.viewer import ViewerService, serve_viewer
 
 
 def _validate_babel_version(ctx, param, value):
@@ -124,6 +126,18 @@ def nodenorm_options(f):
         show_default=True,
         envvar="NODENORM_URL",
         help="NodeNorm base URL used for node normalization and label enrichment",
+    )(f)
+
+
+def nameres_options(f):
+    """Decorator adding --nameres-url to a command."""
+    return click.option(
+        "--nameres-url",
+        type=str,
+        default="https://name-resolution-sri.renci.org/",
+        show_default=True,
+        envvar="NAMERES_URL",
+        help="Name Resolver base URL used for name autocomplete",
     )(f)
 
 
@@ -475,6 +489,50 @@ def xrefs(
                 )
     else:
         write_records(xref_list, fmt=fmt, indent=json_indent)
+
+
+@cli.command("viewer")
+@babel_options
+@nodenorm_options
+@nameres_options
+@click.option("--host", default="127.0.0.1", show_default=True)
+@click.option("--port", default=8000, show_default=True, type=click.IntRange(0, 65535))
+@click.option(
+    "--open-browser/--no-open-browser",
+    default=True,
+    show_default=True,
+    help="Open the viewer in the default browser after the server starts",
+)
+def viewer_command(
+    babel_url: str | None,
+    babel_releases_url: str,
+    babel_version: str,
+    nodenorm_url: str,
+    nameres_url: str,
+    local_dir: str,
+    check_download: str,
+    allow_version_mismatch: bool,
+    host: str,
+    port: int,
+    open_browser: bool,
+):
+    """Run the local NodeNorm clique and Babel concordance graph viewer."""
+    downloader = make_downloader(
+        babel_url, babel_releases_url, babel_version, local_dir, check_download
+    )
+    nodenorm = NodeNorm(nodenorm_url)
+    check_babel_versions(downloader, nodenorm, allow_version_mismatch)
+    service = ViewerService(
+        BabelXRefs(downloader, nodenorm),
+        NameResolver(nameres_url),
+        downloader.babel_version,
+    )
+    browser_host = "127.0.0.1" if host in {"0.0.0.0", "::"} else host
+    click.echo(f"Serving Babel Explorer viewer at http://{browser_host}:{port}/")
+    try:
+        serve_viewer(service, host=host, port=port, open_browser=open_browser)
+    except OSError as error:
+        raise click.ClickException(f"Could not start viewer: {error}") from error
 
 
 @cli.command("ids")
